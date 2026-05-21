@@ -86,7 +86,7 @@ export default function Login() {
               </a>
             </div>
 
-            <button type="submit" className="btn">
+            <button type="submit" className="btnA">
               Sign in
             </button>
 

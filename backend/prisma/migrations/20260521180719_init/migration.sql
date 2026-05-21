@@ -16,8 +16,9 @@ CREATE TABLE "Transaction" (
     "category" TEXT NOT NULL,
     "description" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     "userId" INTEGER NOT NULL,
-    CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -28,8 +29,9 @@ CREATE TABLE "SavingsGoal" (
     "savedAmount" REAL NOT NULL DEFAULT 0,
     "deadline" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     "userId" INTEGER NOT NULL,
-    CONSTRAINT "SavingsGoal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "SavingsGoal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -38,8 +40,23 @@ CREATE TABLE "GoalContribution" (
     "amount" REAL NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "goalId" INTEGER NOT NULL,
-    CONSTRAINT "GoalContribution_goalId_fkey" FOREIGN KEY ("goalId") REFERENCES "SavingsGoal" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "GoalContribution_goalId_fkey" FOREIGN KEY ("goalId") REFERENCES "SavingsGoal" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "Transaction_userId_idx" ON "Transaction"("userId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_transactionType_idx" ON "Transaction"("transactionType");
+
+-- CreateIndex
+CREATE INDEX "Transaction_category_idx" ON "Transaction"("category");
+
+-- CreateIndex
+CREATE INDEX "SavingsGoal_userId_idx" ON "SavingsGoal"("userId");
+
+-- CreateIndex
+CREATE INDEX "GoalContribution_goalId_idx" ON "GoalContribution"("goalId");

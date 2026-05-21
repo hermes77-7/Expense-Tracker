@@ -1,0 +1,1148 @@
+alright i have a node js (typeScript) backend and a react(typeScript) frontend for a web app
+my database is prisma from node i need you to help me complete the project. ill provide some info.
+dont worry about authentication logins/registrations that works:
+also dont create any files just write code ill copy and paste into my current files
+
+project description:
+
+
+Build a personal finance app called an Expense Tracker that helps users record money coming in and going out, monitor their balance, and set savings goals they can work toward over time. The app should make it easy for someone to understand where their money is going, how much they have left, and whether they are on track to meet a financial target.
+
+The main idea is simple: users should be able to add income, add expenses, view totals, and create savings goals. The app should then calculate progress automatically and present the information in a way that is easy to understand at a glance.
+
+
+Main purpose
+
+The app should solve three problems:
+	1.	Track cash flow — show how much money entered and left the account.
+	2.	Organize spending — let users categorize transactions so they can see patterns.
+	3.	Support saving goals — allow users to define targets like “save 500,000” and track progress toward them.
+
+
+Core features
+
+1. Transaction tracking
+
+Users must be able to add both income and expenses.
+
+Each transaction should have:
+	•	amount
+	•	type: income or expense
+	•	category
+	•	date
+	•	note/description
+	•	payment method or account, if needed
+
+The app should automatically update:
+	•	total income
+	•	total expenses
+	•	current balance
+
+For example:
+	•	If a user adds 100,000 income and 25,000 expense, the balance should reflect 75,000 available.
+
+
+2. Categories
+
+Expenses and income should be grouped into categories so users can understand their money habits.
+
+Possible categories:
+	•	Food
+	•	Transport
+	•	Rent
+	•	School
+	•	Business
+	•	Savings
+	•	Entertainment
+	•	Health
+	•	Salary
+	•	Other
+
+The developer should allow custom categories too, so users are not locked into only the default ones.
+
+
+3. Dashboard / home screen
+
+The home screen should summarize the user’s finances in one place.
+
+It should show:
+	•	total balance
+	•	total income for the selected period
+	•	total expenses for the selected period
+	•	savings goal progress
+	•	recent transactions
+
+This screen should be the first thing users see after logging in.
+
+
+4. Savings goal function
+
+Users should be able to create one or more savings goals.
+
+Each goal should include:
+	•	goal name
+	•	target amount
+	•	current saved amount
+	•	optional deadline
+	•	optional description
+	•	linked category or manual contributions
+
+The app should calculate:
+	•	progress percentage
+	•	amount remaining
+	•	whether the user is ahead or behind schedule
+
+Example:
+	•	Goal: Buy a laptop
+	•	Target: 500,000
+	•	Saved so far: 200,000
+	•	Progress: 40%
+
+The app should also support adding money directly toward a goal, or automatically moving a portion of income into a savings goal if you want a more advanced version.
+
+
+Important screens
+
+Home screen
+
+Shows the summary and quick actions like:
+	•	Add income
+	•	Add expense
+	•	Create goal
+
+Transactions screen
+
+Lists all transactions with:
+	•	search
+	•	filter by date
+	•	filter by category
+	•	filter by type
+
+Add transaction screen
+
+A form for adding income or expense.
+
+Savings goals screen
+
+Lists all goals with progress bars and remaining amounts.
+
+Goal details screen
+
+Shows full details of one goal:
+	•	total target
+	•	total saved
+	•	history of contributions
+	•	deadline, if any
+
+Reports / analytics screen
+
+Shows charts and breakdowns such as:
+	•	monthly income vs expenses
+	•	spending by category
+	•	savings progress over time
+
+Settings screen
+
+Allows:
+	•	currency selection
+	•	theme
+	•	notification preferences
+	•	backup/export options
+
+
+Data model the developer can use
+
+User
+	•	id
+	•	name
+	•	email
+	•	password hash or auth token
+	•	currency
+	•	createdAt
+
+Transaction
+	•	id
+	•	userId
+	•	type: income | expense
+	•	amount
+	•	category
+	•	note
+	•	date
+	•	createdAt
+	•	updatedAt
+
+SavingsGoal
+	•	id
+	•	userId
+	•	name
+	•	targetAmount
+	•	savedAmount
+	•	deadline
+	•	status: active | completed | paused
+	•	createdAt
+	•	updatedAt
+
+GoalContribution
+	•	id
+	•	goalId
+	•	amount
+	•	date
+	•	note
+
+
+Logic the app must handle
+
+Balance calculation
+
+The current balance should be:
+
+total income - total expenses
+
+If savings contributions are treated separately, the dev should decide whether savings are:
+	•	a special kind of expense, or
+	•	a separate transfer into a goal
+
+It is usually cleaner to treat savings as a transfer so the user can still see it separately from spending.
+
+Goal progress
+
+Progress should be:
+
+savedAmount / targetAmount × 100
+
+If the user reaches the target, the app should mark the goal as completed and show it clearly.
+
+Monthly summaries
+
+The app should group transactions by month so users can compare spending over time.
+
+
+User experience requirements
+
+The app should be:
+	•	simple
+	•	fast to use
+	•	visually clear
+	•	beginner-friendly
+
+The UI should not feel crowded. Important numbers should be visible immediately. Use color only to support understanding, for example:
+	•	green for income
+	•	red for expenses
+	•	blue or yellow for savings goals
+
+Forms should be short and easy to complete.
+
+
+Useful extras for a stronger version
+
+These are not required for the first version, but they would make the app more powerful:
+	•	recurring transactions
+	•	budget limits per category
+	•	notifications when spending is high
+	•	goal reminders
+	•	export to CSV or PDF
+	•	cloud sync
+	•	offline mode
+	•	transaction search
+	•	charts for weekly or monthly trends
+
+
+Suggested MVP
+
+The first version should include only the essentials:
+	•	add income
+	•	add expense
+	•	view balance
+	•	view transaction list
+	•	create savings goal
+	•	track goal progress
+	•	basic dashboard
+
+Once that works well, then add charts, budgets, reminders, and export features.
+
+
+What the app should feel like
+
+The end result should feel like a personal finance assistant, not just a list of numbers. It should help users answer:
+	•	How much money do I have?
+	•	What did I spend it on?
+	•	Am I saving enough?
+	•	How close am I to my goal?
+
+
+
+here is some of my backend files and info
+
+
+prisma cli version 6.19.3
+
+schema.prisma: 
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+
+  name          String
+
+  email         String         @unique
+
+  password      String
+
+  createdAt     DateTime       @default(now())
+
+  transactions  Transaction[]
+
+  goals         SavingsGoal[]
+}
+
+model Transaction {
+  id               Int       @id @default(autoincrement())
+
+  title            String
+
+  amount           Float
+
+  transactionType  String
+
+  category         String
+
+  description      String?
+
+  createdAt        DateTime  @default(now())
+
+  updatedAt        DateTime  @updatedAt
+
+  userId           Int
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+
+  @@index([transactionType])
+
+  @@index([category])
+}
+
+model SavingsGoal {
+  id                Int                  @id @default(autoincrement())
+
+  name              String
+
+  targetAmount      Float
+
+  savedAmount       Float                @default(0)
+
+  deadline          DateTime?
+
+  createdAt         DateTime             @default(now())
+
+  updatedAt         DateTime             @updatedAt
+
+  userId            Int
+
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  contributions     GoalContribution[]
+
+  @@index([userId])
+}
+
+model GoalContribution {
+  id             Int            @id @default(autoincrement())
+
+  amount         Float
+
+  createdAt      DateTime       @default(now())
+
+  goalId         Int
+
+  goal           SavingsGoal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+authController.ts
+
+import { Request, Response } from "express";
+
+import bcrypt from "bcryptjs";
+
+import jwt from "jsonwebtoken";
+
+import prisma from "../utils/prisma";
+
+export const register = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        error: "User already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+      },
+    });
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+      },
+
+      process.env.JWT_SECRET as string,
+
+      {
+        expiresIn: "7d",
+      },
+    );
+
+    res.status(201).json({
+      token,
+
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      error: "Registration failed",
+    });
+  }
+};
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        error: "Invalid credentials",
+      });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (!validPassword) {
+      return res.status(400).json({
+        error: "Invalid credentials",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+      },
+
+      process.env.JWT_SECRET as string,
+
+      {
+        expiresIn: "7d",
+      },
+    );
+
+    res.json({
+      token,
+
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      error: "Login failed",
+    });
+  }
+};
+
+authMiddleware.ts
+
+ import { Request, Response, NextFunction } from "express";
+
+import jwt from "jsonwebtoken";
+
+export const protect = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        error: "Unauthorized",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      userId: number;
+    };
+
+    req.userId = decoded.userId;
+
+    next();
+  } catch (error) {
+    res.status(401).json({
+      error: "Invalid token",
+    });
+  }
+};
+
+authRoutes.ts
+
+    import { Router } from "express";
+
+    import { register, login } from "../controllers/authController";
+
+    const router = Router();
+
+    router.post("/register", register);
+
+    router.post("/login", login);
+
+    export default router;
+
+
+utils\prisma.ts
+
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export default prisma;
+
+app.ts
+import express from "express";
+import cors from "cors";
+import transactionRoutes from "./routes/transactionRoutes";
+
+import authRoutes from "./routes/authRoutes";
+
+const app = express();
+
+app.use(cors());
+
+app.use(express.json());
+
+app.get("/", (_req, res) => {
+  res.json({
+    message: "API running",
+  });
+});
+
+app.use("/api/auth", authRoutes);
+
+export default app;
+
+
+
+backend Structure
+
+├───backend
+│   │   .gitignore
+│   │   package-lock.json
+│   │   package.json
+│   │   tsconfig.json
+│   │
+│   ├───prisma
+│   │   │   schema.prisma
+│   │   │
+│   │   └───migrations
+│   │       │   migration_lock.toml
+│   │       │
+│   │       └───20260520224306_init
+│   │               migration.sql
+│   │
+│   └───src
+│       │   app.ts
+│       │   server.ts
+│       │
+│       ├───controllers
+│       │       authController.ts
+│       │
+│       ├───middleware
+│       │       authMiddleware.ts
+│       │
+│       ├───routes
+│       │       authRoutes.ts
+│       │
+│       ├───types
+│       │   └───express
+│       │           index.d.ts
+│       │
+│       └───utils
+│               prisma.ts
+
+
+the main frontend componet is This
+
+import { useState, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
+import "../styles/dashboard.css";
+
+type Transaction = {
+  id: number;
+  type: "income" | "expense";
+  category: string;
+  note: string;
+  amount: number;
+  date: string;
+};
+
+type Goal = {
+  id: number;
+  name: string;
+  saved: number;
+  target: number;
+};
+
+export default function DashboardPage() {
+  const { user, logout } = useAuth();
+
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const [goals, setGoals] = useState<Goal[]>([]);
+
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+
+  const [transactionForm, setTransactionForm] = useState({
+    title: "",
+    amount: "",
+    transactionType: "expense",
+    category: "",
+    description: "",
+  });
+
+  async function fetchTransactions() {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch("http://localhost:5000/api/transactions", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      setTransactions(data);
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error);
+    }
+  }
+
+  async function fetchGoals() {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch("http://localhost:5000/api/goals", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      setGoals(data);
+    } catch (error) {
+      console.error("Failed to fetch goals:", error);
+    }
+  }
+
+  async function createTransaction(e: React.FormEvent) {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch("http://localhost:8000/api/transactions", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: JSON.stringify({
+          title: transactionForm.title,
+
+          amount: Number(transactionForm.amount),
+
+          transactionType: transactionForm.transactionType,
+
+          category: transactionForm.category,
+
+          description: transactionForm.description,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create transaction");
+      }
+
+      await fetchTransactions();
+
+      setShowTransactionModal(false);
+
+      setTransactionForm({
+        title: "",
+        amount: "",
+        transactionType: "expense",
+        category: "",
+        description: "",
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchTransactions();
+    fetchGoals();
+  }, []);
+
+  const totalIncome = transactions
+    .filter((tx) => tx.type === "income")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const totalExpenses = transactions
+    .filter((tx) => tx.type === "expense")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const balance = totalIncome - totalExpenses;
+
+
+  return (
+    <div className="app-container">
+      {/* HEADER */}
+      <header className="header">
+        <div className="logo">
+          <h1>
+            <span className="piggy">
+              <i className="fas fa-piggy-bank" />
+            </span>{" "}
+            FinBalance
+          </h1>
+
+          <p>Track · Save · Achieve</p>
+        </div>
+
+        <div className="header-actions">
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowTransactionModal(true)}
+          >
+            + Add Transaction
+          </button>
+
+          <button className="btn btn-outline" onClick={logout}>
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* TABS */}
+      <div className="nav-tabs">
+        <button
+          className={`tab-btn ${activeTab === "dashboard" ? "active" : ""}`}
+          onClick={() => setActiveTab("dashboard")}
+        >
+          Dashboard
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === "transactions" ? "active" : ""}`}
+          onClick={() => setActiveTab("transactions")}
+        >
+          Transactions
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === "goals" ? "active" : ""}`}
+          onClick={() => setActiveTab("goals")}
+        >
+          Savings Goals
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === "reports" ? "active" : ""}`}
+          onClick={() => setActiveTab("reports")}
+        >
+          Reports
+        </button>
+      </div>
+
+      {/* DASHBOARD */}
+      {activeTab === "dashboard" && (
+        <>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-label">Current Balance</div>
+
+              <div className="stat-number">${balance.toFixed(2)}</div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-label">Total Income</div>
+
+              <div className="stat-number income">
+                ${totalIncome.toFixed(2)}
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-label">Total Expenses</div>
+
+              <div className="stat-number expense">
+                ${totalExpenses.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <section className="section_2">
+            <div className="section-header">
+              <h2>Top Goal Progress</h2>
+
+              <button className="btn btn-outline btn-sm">Manage Goals</button>
+            </div>
+
+            {goals.map((goal) => {
+              const percent = (goal.saved / goal.target) * 100;
+
+              return (
+                <div className="goal-card" key={goal.id}>
+                  <div className="goal-header">
+                    <span className="goal-name">{goal.name}</span>
+
+                    <span className="goal-status">Active</span>
+                  </div>
+
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${percent}%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="goal-stats">
+                    <span>${goal.saved}</span>
+
+                    <span>${goal.target}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+
+          <section className="section_2">
+            <div className="section-header">
+              <h2>Recent Transactions</h2>
+
+              <button className="btn btn-outline btn-sm">View All</button>
+            </div>
+
+            {transactions.map((tx) => (
+              <div className="txn-row" key={tx.id}>
+                <div className="txn-left">
+                  <div className={`txn-icon ${tx.type}`}>
+                    {tx.type === "income" ? "↑" : "↓"}
+                  </div>
+
+                  <div className="txn-info">
+                    <h4>
+                      {tx.category} — {tx.note}
+                    </h4>
+
+                    <div className="meta">{tx.date}</div>
+                  </div>
+                </div>
+
+                <div className={`txn-amount ${tx.type}`}>
+                  {tx.type === "income" ? "+" : "-"}${tx.amount}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="section_2">
+            <div className="section-header">
+              <h2>Quick Actions</h2>
+            </div>
+
+            <div className="quick-actions">
+              <button
+                className="btn btn-primary"
+                id="quickIncomeBtn"
+                onClick={() => {
+                  setTransactionForm({
+                    ...transactionForm,
+                    transactionType: "income",
+                  });
+
+                  setShowTransactionModal(true);
+                }}
+              >
+                <i className="fas fa-plus-circle"></i> Add Income
+              </button>
+              <button
+                className="btn btn-outline"
+                id="quickExpenseBtn"
+                onClick={() => {
+                  setTransactionForm({
+                    ...transactionForm,
+                    transactionType: "expense",
+                  });
+
+                  setShowTransactionModal(true);
+                }}
+              >
+                <i className="fas fa-minus-circle"></i> Add Expense
+              </button>
+              <button className="btn btn-outline" id="quickGoalBtn">
+                <i className="fas fa-flag-checkered"></i> New Goal
+              </button>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* TRANSACTIONS */}
+      {activeTab === "transactions" && (
+        <div className="section_2">
+          <div className="section-header">
+            <h2>All Transactions</h2>
+
+            <button className="btn btn-primary btn-sm">+ New</button>
+          </div>
+
+          {transactions.map((tx) => (
+            <div className="txn-row" key={tx.id}>
+              <div className="txn-left">
+                <div className={`txn-icon ${tx.type}`}>
+                  {tx.type === "income" ? "↑" : "↓"}
+                </div>
+
+                <div className="txn-info">
+                  <h4>
+                    {tx.category} — {tx.note}
+                  </h4>
+
+                  <div className="meta">{tx.date}</div>
+                </div>
+              </div>
+
+              <div className={`txn-amount ${tx.type}`}>
+                {tx.type === "income" ? "+" : "-"}${tx.amount}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* GOALS */}
+      {activeTab === "goals" && (
+        <div className="section_2">
+          <div className="section-header">
+            <h2>Savings Goals</h2>
+
+            <button className="btn btn-primary btn-sm">+ New Goal</button>
+          </div>
+
+          <div className="goals-grid">
+            {goals.map((goal) => {
+              const percent = (goal.saved / goal.target) * 100;
+
+              return (
+                <div className="goal-card" key={goal.id}>
+                  <div className="goal-header">
+                    <span className="goal-name">{goal.name}</span>
+
+                    <span className="goal-status">Active</span>
+                  </div>
+
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${percent}%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="goal-stats">
+                    <span>${goal.saved}</span>
+
+                    <span>${goal.target}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* REPORTS */}
+      {activeTab === "reports" && (
+        <div className="section">
+          <div className="section-header">
+            <h2>Reports</h2>
+          </div>
+
+          <p>Charts will be connected later when backend integration starts.</p>
+        </div>
+      )}
+
+      {/* TRANSACTION MODAL */}
+{showTransactionModal && (
+  <div
+    className="modal-overlay"
+    onClick={() => setShowTransactionModal(false)}
+  >
+    <div
+      className="modal-content"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="modal-header">
+        <h2>Add Transaction</h2>
+
+        <button
+          className="close-btn"
+          onClick={() => setShowTransactionModal(false)}
+        >
+          ×
+        </button>
+      </div>
+
+      <form onSubmit={createTransaction}>
+        <div className="form-group">
+          <label>Title</label>
+
+          <input
+            type="text"
+            value={transactionForm.title}
+            onChange={(e) =>
+              setTransactionForm({
+                ...transactionForm,
+                title: e.target.value,
+              })
+            }
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Amount</label>
+
+          <input
+            type="number"
+            step="0.01"
+            value={transactionForm.amount}
+            onChange={(e) =>
+              setTransactionForm({
+                ...transactionForm,
+                amount: e.target.value,
+              })
+            }
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Type</label>
+
+          <select
+            value={transactionForm.transactionType}
+            onChange={(e) =>
+              setTransactionForm({
+                ...transactionForm,
+                transactionType: e.target.value,
+              })
+            }
+          >
+            <option value="income">Income</option>
+
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label>Category</label>
+
+          <input
+            type="text"
+            value={transactionForm.category}
+            onChange={(e) =>
+              setTransactionForm({
+                ...transactionForm,
+                category: e.target.value,
+              })
+            }
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Description</label>
+
+          <textarea
+            value={transactionForm.description}
+            onChange={(e) =>
+              setTransactionForm({
+                ...transactionForm,
+                description: e.target.value,
+              })
+            }
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary modal-submit">
+          Save Transaction
+        </button>
+      </form>
+    </div>
+  </div>
+)}
+
+    </div>
+  );
+}
+
+
+im currently trying to create the CRUD operations for transactions 

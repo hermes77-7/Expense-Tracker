@@ -8,69 +8,72 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
 
-  name         String
+  name          String
 
-  email        String        @unique
+  email         String         @unique
 
-  password     String
+  password      String
 
-  createdAt    DateTime      @default(now())
+  createdAt     DateTime       @default(now())
 
-  transactions Transaction[]
+  transactions  Transaction[]
 
-  goals        SavingsGoal[]
+  goals         SavingsGoal[]
 }
 
 model Transaction {
-  id              Int       @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
 
-  title           String
+  title            String
 
-  amount          Float
+  amount           Float
 
-  transactionType String
+  transactionType  String
 
-  category        String
+  category         String
 
-  description     String?
+  description      String?
 
-  createdAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
 
-  userId          Int
-
-  user            User      @relation(fields: [userId], references: [id])
-}
-
-model SavingsGoal {
-  id               Int                 @id @default(autoincrement())
-
-  name             String
-
-  targetAmount     Float
-
-  savedAmount      Float               @default(0)
-
-  deadline         DateTime?
-
-  createdAt        DateTime            @default(now())
+  updatedAt        DateTime  @updatedAt
 
   userId           Int
 
-  user             User                @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  contributions    GoalContribution[]
+  @@index([userId])
+
+  @@index([transactionType])
+
+  @@index([category])
+}
+
+model SavingsGoal {
+  id                Int                  @id @default(autoincrement())
+  name              String
+  targetAmount      Float
+  savedAmount       Float                @default(0)
+  deadline          DateTime?
+  status            String               @default("active")   // ← add this
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  userId            Int
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions     GoalContribution[]
+
+  @@index([userId])
 }
 
 model GoalContribution {
-  id            Int           @id @default(autoincrement())
+  id             Int            @id @default(autoincrement())
+  amount         Float
+  note           String?                                       // ← add this
+  createdAt      DateTime       @default(now())
+  goalId         Int
+  goal           SavingsGoal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
-  amount        Float
-
-  createdAt     DateTime      @default(now())
-
-  goalId        Int
-
-  goal          SavingsGoal   @relation(fields: [goalId], references: [id])
+  @@index([goalId])
 }

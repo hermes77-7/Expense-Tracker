@@ -160,7 +160,7 @@
   box-shadow: 0 0 0 3px rgba(196, 120, 90, 0.1);
 }
 
-.btn {
+.btnA {
   width: 100%;
 
   padding: 12px;
@@ -182,7 +182,7 @@
   color: white;
 }
 
-.btn:hover {
+.btnA:hover {
   background: var(--primary-hover);
 
   transform: translateY(-1px);
