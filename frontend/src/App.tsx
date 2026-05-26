@@ -3,9 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardPage from "./pages/DashboardPage";
-
+import WelcomePage from "./pages/WelcomePage";
 import ProtectedRoute from "./components/ProtectedRoute";
-
 import { useAuth } from "./hooks/useAuth";
 
 function AppRoutes() {
@@ -14,6 +13,8 @@ function AppRoutes() {
   return (
     <Routes>
       {/* LOGIN */}
+      <Route path="/" element={<WelcomePage />} />
+
       <Route
         path="/login"
         element={token ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -35,10 +36,9 @@ function AppRoutes() {
         }
       />
 
-      {/* DEFAULT REDIRECT */}
       <Route
         path="*"
-        element={<Navigate to={token ? "/dashboard" : "/login"} replace />}
+        element={<Navigate to="/" replace />}
       />
     </Routes>
   );
