@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import "../styles/dashboard.css";
+import { useMemo } from "react";
+
 
 const API = "http://localhost:8000";
 
@@ -216,7 +218,7 @@ function GoalsTab({
                           padding: "0.4rem 0.75rem",
                           borderRadius: "6px",
                           border: "1px solid var(--border, #333)",
-                          background: "var(--card, #1e1e2e)",
+                          background: "var(--card, #ffffff)",
                           color: "inherit",
                         }}
                       />
@@ -231,7 +233,7 @@ function GoalsTab({
                           padding: "0.4rem 0.75rem",
                           borderRadius: "6px",
                           border: "1px solid var(--border, #333)",
-                          background: "var(--card, #1e1e2e)",
+                          background: "var(--card, #ffffff)",
                           color: "inherit",
                         }}
                       />
@@ -308,6 +310,633 @@ function TxRow({
         </button>
       </div>
     </div>
+  );
+}
+
+
+function ReportsTab({
+  transactions,
+  goals,
+}: {
+  transactions: Transaction[];
+  goals: Goal[];
+}) {
+  // ─── Monthly income vs expenses ──────────────────────────────────────────
+
+  const monthlyData = useMemo(() => {
+    const map: Record<
+      string,
+      { month: string; income: number; expense: number }
+    > = {};
+
+    transactions.forEach((tx) => {
+      const date = new Date(tx.createdAt);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const label = date.toLocaleString("default", {
+        month: "short",
+        year: "numeric",
+      });
+
+      if (!map[key]) map[key] = { month: label, income: 0, expense: 0 };
+
+      if (tx.transactionType === "income") map[key].income += tx.amount;
+      else map[key].expense += tx.amount;
+    });
+
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => v)
+      .slice(-6); // last 6 months
+  }, [transactions]);
+
+  // ─── Spending by category ────────────────────────────────────────────────
+
+  const categoryData = useMemo(() => {
+    const map: Record<string, number> = {};
+
+    transactions
+      .filter((tx) => tx.transactionType === "expense")
+      .forEach((tx) => {
+        map[tx.category] = (map[tx.category] || 0) + tx.amount;
+      });
+
+    return Object.entries(map)
+      .sort(([, a], [, b]) => b - a)
+      .map(([category, amount]) => ({ category, amount }));
+  }, [transactions]);
+
+  // ─── Goals progress ──────────────────────────────────────────────────────
+
+  const totalIncome = transactions
+    .filter((tx) => tx.transactionType === "income")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const totalExpenses = transactions
+    .filter((tx) => tx.transactionType === "expense")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const totalSaved = goals.reduce((sum, g) => sum + g.savedAmount, 0);
+  const totalTargeted = goals.reduce((sum, g) => sum + g.targetAmount, 0);
+
+  // ─── Chart helpers ───────────────────────────────────────────────────────
+
+  const maxMonthlyValue = Math.max(
+    ...monthlyData.flatMap((m) => [m.income, m.expense]),
+    1,
+  );
+
+  const maxCategoryValue = Math.max(...categoryData.map((c) => c.amount), 1);
+
+  const CATEGORY_COLORS = [
+    "#60a5fa",
+    "#34d399",
+    "#f87171",
+    "#fbbf24",
+    "#a78bfa",
+    "#fb923c",
+    "#38bdf8",
+    "#4ade80",
+  ];
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1.5rem",
+        padding: "0 0 2rem",
+      }}
+    >
+      {/* ── Summary cards ── */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Income</div>
+          <div className="stat-number income">${totalIncome.toFixed(2)}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Total Expenses</div>
+          <div className="stat-number expense">${totalExpenses.toFixed(2)}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Net Balance</div>
+          <div
+            className={`stat-number ${totalIncome - totalExpenses >= 0 ? "income" : "expense"}`}
+          >
+            ${(totalIncome - totalExpenses).toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Monthly income vs expenses bar chart ── */}
+      <div className="section_2">
+        <div className="section-header">
+          <h2>Monthly Overview</h2>
+          <span className="meta" style={{ fontSize: "0.8rem" }}>
+            Last 6 months
+          </span>
+        </div>
+
+        {monthlyData.length === 0 ? (
+          <p style={{ color: "var(--text-muted, #888)" }}>No data yet.</p>
+        ) : (
+          <>
+            {/* Legend */}
+            <div
+              style={{ display: "flex", gap: "1.25rem", marginBottom: "1rem" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontSize: "0.85rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 2,
+                    background: "#34d399",
+                  }}
+                />
+                Income
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  fontSize: "0.85rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 2,
+                    background: "#f87171",
+                  }}
+                />
+                Expenses
+              </div>
+            </div>
+
+            {/* Bars */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: "0.75rem",
+                height: 180,
+              }}
+            >
+              {monthlyData.map((m) => (
+                <div
+                  key={m.month}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    height: "100%",
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "flex-end",
+                      gap: "4px",
+                      width: "100%",
+                    }}
+                  >
+                    {/* Income bar */}
+                    <div
+                      style={{
+                        flex: 1,
+                        position: "relative",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "flex-end",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          height: `${(m.income / maxMonthlyValue) * 100}%`,
+                          background: "#34d399",
+                          borderRadius: "4px 4px 0 0",
+                          minHeight: m.income > 0 ? 4 : 0,
+                          transition: "height 0.3s ease",
+                        }}
+                        title={`Income: $${m.income.toFixed(2)}`}
+                      />
+                    </div>
+                    {/* Expense bar */}
+                    <div
+                      style={{
+                        flex: 1,
+                        position: "relative",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "flex-end",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          height: `${(m.expense / maxMonthlyValue) * 100}%`,
+                          background: "#f87171",
+                          borderRadius: "4px 4px 0 0",
+                          minHeight: m.expense > 0 ? 4 : 0,
+                          transition: "height 0.3s ease",
+                        }}
+                        title={`Expenses: $${m.expense.toFixed(2)}`}
+                      />
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-muted, #888)",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {m.month}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── Spending by category ── */}
+      <div className="section_2">
+        <div className="section-header">
+          <h2>Spending by Category</h2>
+        </div>
+
+        {categoryData.length === 0 ? (
+          <p style={{ color: "var(--text-muted, #888)" }}>
+            No expense data yet.
+          </p>
+        ) : (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+          >
+            {categoryData.map((c, i) => {
+              const pct = (c.amount / maxCategoryValue) * 100;
+              const color = CATEGORY_COLORS[i % CATEGORY_COLORS.length];
+              const totalExpensesForPct = categoryData.reduce(
+                (s, x) => s + x.amount,
+                0,
+              );
+              const sharePct = ((c.amount / totalExpensesForPct) * 100).toFixed(
+                1,
+              );
+
+              return (
+                <div key={c.category}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "0.3rem",
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          background: color,
+                          display: "inline-block",
+                        }}
+                      />
+                      {c.category}
+                    </span>
+                    <span style={{ color: "var(--text-muted, #888)" }}>
+                      ${c.amount.toFixed(2)}{" "}
+                      <span style={{ fontSize: "0.78rem" }}>({sharePct}%)</span>
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 8,
+                      borderRadius: 4,
+                      background: "var(--border, #2a2a3d)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${pct}%`,
+                        background: color,
+                        borderRadius: 4,
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Savings goals progress ── */}
+      <div className="section_2">
+        <div className="section-header">
+          <h2>Savings Goals Progress</h2>
+          {totalTargeted > 0 && (
+            <span
+              style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}
+            >
+              ${totalSaved.toFixed(2)} / ${totalTargeted.toFixed(2)}
+            </span>
+          )}
+        </div>
+
+        {goals.length === 0 ? (
+          <p style={{ color: "var(--text-muted, #888)" }}>No goals yet.</p>
+        ) : (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            {goals.map((goal) => {
+              const pct = Math.min(
+                (goal.savedAmount / goal.targetAmount) * 100,
+                100,
+              );
+              const remaining = goal.targetAmount - goal.savedAmount;
+              const isComplete = goal.status === "completed";
+
+              return (
+                <div key={goal.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "0.35rem",
+                      fontSize: "0.88rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      {goal.name}
+                      {isComplete && (
+                        <span
+                          style={{
+                            fontSize: "0.75rem",
+                            background: "#34d39922",
+                            color: "#34d399",
+                            padding: "1px 6px",
+                            borderRadius: 4,
+                          }}
+                        >
+                          ✓ Complete
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ color: "var(--text-muted, #888)" }}>
+                      {pct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 10,
+                      borderRadius: 5,
+                      background: "var(--border, #2a2a3d)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${pct}%`,
+                        background: isComplete ? "#34d399" : "#60a5fa",
+                        borderRadius: 5,
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginTop: "0.3rem",
+                      fontSize: "0.78rem",
+                      color: "var(--text-muted, #888)",
+                    }}
+                  >
+                    <span>${goal.savedAmount.toFixed(2)} saved</span>
+                    {!isComplete && (
+                      <span>${remaining.toFixed(2)} remaining</span>
+                    )}
+                    {goal.deadline && (
+                      <span>
+                        Due {new Date(goal.deadline).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Income vs expenses donut ── */}
+      <div className="section_2">
+        <div className="section-header">
+          <h2>Income vs Expenses</h2>
+        </div>
+
+        {totalIncome === 0 && totalExpenses === 0 ? (
+          <p style={{ color: "var(--text-muted, #888)" }}>No data yet.</p>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "2rem",
+              flexWrap: "wrap",
+            }}
+          >
+            {/* SVG donut */}
+            <DonutChart income={totalIncome} expenses={totalExpenses} />
+
+            {/* Legend */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 3,
+                    background: "#34d399",
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: "0.85rem" }}>Income</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                    ${totalIncome.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 3,
+                    background: "#f87171",
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: "0.85rem" }}>Expenses</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                    ${totalExpenses.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 3,
+                    background: "#60a5fa",
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: "0.85rem" }}>Savings Rate</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
+                    {totalIncome > 0
+                      ? `${(((totalIncome - totalExpenses) / totalIncome) * 100).toFixed(1)}%`
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── DonutChart ───────────────────────────────────────────────────────────────
+
+function DonutChart({
+  income,
+  expenses,
+}: {
+  income: number;
+  expenses: number;
+}) {
+  const total = income + expenses;
+  const incomeShare = income / total;
+
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+  const incomeArc = incomeShare * circumference;
+  const expenseArc = circumference - incomeArc;
+
+  return (
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      {/* Expense arc (background) */}
+      <circle
+        cx="80"
+        cy="80"
+        r={radius}
+        fill="none"
+        stroke="#f87171"
+        strokeWidth="22"
+        strokeDasharray={`${expenseArc} ${incomeArc}`}
+        strokeDashoffset={0}
+        transform="rotate(-90 80 80)"
+      />
+      {/* Income arc */}
+      <circle
+        cx="80"
+        cy="80"
+        r={radius}
+        fill="none"
+        stroke="#34d399"
+        strokeWidth="22"
+        strokeDasharray={`${incomeArc} ${expenseArc}`}
+        strokeDashoffset={0}
+        transform="rotate(-90 80 80)"
+      />
+      {/* Center label */}
+      <text
+        x="80"
+        y="75"
+        textAnchor="middle"
+        fontSize="13"
+        fill="currentColor"
+        opacity="0.6"
+      >
+        saved
+      </text>
+      <text
+        x="80"
+        y="94"
+        textAnchor="middle"
+        fontSize="14"
+        fontWeight="bold"
+        fill="currentColor"
+      >
+        {income > 0
+          ? `${(((income - expenses) / income) * 100).toFixed(0)}%`
+          : "—"}
+      </text>
+    </svg>
   );
 }
 
@@ -795,7 +1424,7 @@ export default function DashboardPage() {
                 padding: "0.4rem 0.75rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border, #333)",
-                background: "var(--card, #1e1e2e)",
+                background: "var(--card, #ffffff)",
                 color: "inherit",
                 flex: 1,
                 minWidth: "140px",
@@ -808,7 +1437,7 @@ export default function DashboardPage() {
                 padding: "0.4rem 0.75rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border, #333)",
-                background: "var(--card, #1e1e2e)",
+                background: "var(--card, #ffffff)",
                 color: "inherit",
               }}
             >
@@ -823,7 +1452,7 @@ export default function DashboardPage() {
                 padding: "0.4rem 0.75rem",
                 borderRadius: "6px",
                 border: "1px solid var(--border, #333)",
-                background: "var(--card, #1e1e2e)",
+                background: "var(--card, #ffffff)",
                 color: "inherit",
               }}
             >
@@ -869,12 +1498,7 @@ export default function DashboardPage() {
 
       {/* ── REPORTS ── */}
       {activeTab === "reports" && (
-        <div className="section">
-          <div className="section-header">
-            <h2>Reports</h2>
-          </div>
-          <p>Charts coming soon.</p>
-        </div>
+        <ReportsTab transactions={transactions} goals={goals} />
       )}
 
       {/* ── ADD TRANSACTION MODAL ── */}
