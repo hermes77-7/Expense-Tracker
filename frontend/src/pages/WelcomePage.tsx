@@ -4,7 +4,6 @@ import "../styles/welcome.css";
 export default function WelcomePage() {
   return (
     <div className="welcome-page">
-
       {/* NAV */}
       <nav className="welcome-nav">
         <div className="welcome-nav-logo">
@@ -12,8 +11,12 @@ export default function WelcomePage() {
           FinBalance
         </div>
         <div className="welcome-nav-links">
-          <Link to="/login" className="btn-welcome-outline">Sign in</Link>
-          <Link to="/register" className="btn-welcome-primary">Get started</Link>
+          <Link to="/login" className="btn-welcome-outline">
+            Sign in
+          </Link>
+          <Link to="/register" className="btn-welcome-primary">
+            Get started
+          </Link>
         </div>
       </nav>
 
@@ -26,8 +29,8 @@ export default function WelcomePage() {
         </h1>
 
         <p>
-          Track income and expenses, set savings goals, and get a clear
-          picture of your finances � all in one simple place.
+          Track income and expenses, set savings goals, and get a clear picture
+          of your finances all in one simple place.
         </p>
 
         <div className="welcome-actions">
@@ -43,25 +46,37 @@ export default function WelcomePage() {
       {/* FEATURES */}
       <section className="welcome-features">
         <div className="feature-card">
-          <div className="feature-icon">??</div>
+          <div className="feature-icon">
+            {" "}
+            <i className="fas fa-receipt" />
+          </div>
           <h3>Track Transactions</h3>
           <p>Log income and expenses with categories and descriptions.</p>
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon">??</div>
+          <div className="feature-icon">
+            {" "}
+            <i className="fas fa-check-circle" />
+          </div>
           <h3>Savings Goals</h3>
           <p>Set targets and track your progress toward every goal.</p>
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon">??</div>
+          <div className="feature-icon">
+            {" "}
+            <i className="fas fa-line" />
+          </div>
           <h3>Live Dashboard</h3>
           <p>See your balance, income and expenses update in real time.</p>
         </div>
 
         <div className="feature-card">
-          <div className="feature-icon">??</div>
+          <div className="feature-icon">
+            {" "}
+            <i className="fas fa-lock" />
+          </div>
           <h3>Secure & Private</h3>
           <p>Your data is protected with encrypted passwords and JWT auth.</p>
         </div>
@@ -71,7 +86,6 @@ export default function WelcomePage() {
       <footer className="welcome-footer">
         � 2026 FinBalance � Built with React & Node.js
       </footer>
-
     </div>
   );
 }

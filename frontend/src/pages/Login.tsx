@@ -51,7 +51,6 @@ export default function Login() {
             <div className="form-group">
               <label>Email address</label>
               <div className="input-icon">
-                <i className="fas fa-envelope" />
                 <input
                   type="email"
                   className="form-control"
@@ -66,7 +65,6 @@ export default function Login() {
             <div className="form-group">
               <label>Password</label>
               <div className="input-icon">
-                <i className="fas fa-lock" />
                 <input
                   type="password"
                   className="form-control"
