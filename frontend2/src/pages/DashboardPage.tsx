@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import "../styles/dashboard.css";
-import { useMemo } from "react";
-
 
 const API = "http://localhost:8000";
+const USD_TO_XAF_RATE = 600;
+
+type CurrencyMode = "USD" | "XAF";
 
 type Transaction = {
   id: number;
@@ -12,15 +13,15 @@ type Transaction = {
   transactionType: "income" | "expense";
   category: string;
   description: string | null;
-  amount: number;
+  amount: number; // stored in USD internally
   createdAt: string;
 };
 
 type Goal = {
   id: number;
   name: string;
-  savedAmount: number;
-  targetAmount: number;
+  savedAmount: number; // stored in USD internally
+  targetAmount: number; // stored in USD internally
   deadline: string | null;
   status: string;
 };
@@ -67,6 +68,36 @@ function authHeaders() {
   };
 }
 
+function convertUsdToDisplay(amountUsd: number, currency: CurrencyMode) {
+  return currency === "USD" ? amountUsd : amountUsd * USD_TO_XAF_RATE;
+}
+
+function convertDisplayToUsd(amount: string, currency: CurrencyMode) {
+  const numeric = Number(amount);
+  if (Number.isNaN(numeric)) return 0;
+  return currency === "USD" ? numeric : numeric / USD_TO_XAF_RATE;
+}
+
+function formatMoney(amountUsd: number, currency: CurrencyMode) {
+  const displayValue = convertUsdToDisplay(amountUsd, currency);
+
+  if (currency === "USD") {
+    return `$${displayValue.toFixed(2)}`;
+  }
+
+  return `${Math.round(displayValue).toLocaleString("en-US")} XAF`;
+}
+
+function formatMoneyNoSymbol(amountUsd: number, currency: CurrencyMode) {
+  const displayValue = convertUsdToDisplay(amountUsd, currency);
+
+  if (currency === "USD") {
+    return displayValue.toFixed(2);
+  }
+
+  return Math.round(displayValue).toLocaleString("en-US");
+}
+
 // ─── GoalsTab (outside DashboardPage) ────────────────────────────────────────
 
 function GoalsTab({
@@ -74,6 +105,7 @@ function GoalsTab({
   onDelete,
   onContribute,
   onNewGoal,
+  currency,
 }: {
   goals: Goal[];
   onDelete: (id: number) => void;
@@ -84,6 +116,7 @@ function GoalsTab({
     note: string,
   ) => void;
   onNewGoal: () => void;
+  currency: CurrencyMode;
 }) {
   const [contributeStates, setContributeStates] = useState<
     Record<number, ContributeState>
@@ -118,11 +151,13 @@ function GoalsTab({
 
       <div className="goals-grid">
         {goals.map((goal) => {
-          const percent = Math.min(
-            (goal.savedAmount / goal.targetAmount) * 100,
-            100,
-          );
-          const remaining = goal.targetAmount - goal.savedAmount;
+          const percent =
+            goal.targetAmount > 0
+              ? Math.min((goal.savedAmount / goal.targetAmount) * 100, 100)
+              : 0;
+
+          const remaining = Math.max(goal.targetAmount - goal.savedAmount, 0);
+
           const state: ContributeState = contributeStates[goal.id] || {
             amount: "",
             note: "",
@@ -166,16 +201,16 @@ function GoalsTab({
               </div>
 
               <div className="goal-stats">
-                <span>${goal.savedAmount.toFixed(2)} saved</span>
-                <span>${goal.targetAmount.toFixed(2)} target</span>
+                <span>{formatMoney(goal.savedAmount, currency)} saved</span>
+                <span>{formatMoney(goal.targetAmount, currency)} target</span>
               </div>
 
               <div
                 className="meta"
                 style={{ marginTop: "0.4rem", fontSize: "0.8rem" }}
               >
-                {percent.toFixed(0)}% complete · ${remaining.toFixed(2)}{" "}
-                remaining
+                {percent.toFixed(0)}% complete ·{" "}
+                {formatMoney(remaining, currency)} remaining
                 {goal.deadline && (
                   <> · Due {new Date(goal.deadline).toLocaleDateString()}</>
                 )}
@@ -208,7 +243,7 @@ function GoalsTab({
                         type="number"
                         step="0.01"
                         min="0.01"
-                        placeholder="Amount"
+                        placeholder={`Amount (${currency})`}
                         value={state.amount}
                         onChange={(e) =>
                           updateField(goal.id, "amount", e.target.value)
@@ -258,10 +293,12 @@ function TxRow({
   tx,
   onEdit,
   onDelete,
+  currency,
 }: {
   tx: Transaction;
   onEdit: (tx: Transaction) => void;
   onDelete: (id: number) => void;
+  currency: CurrencyMode;
 }) {
   return (
     <div className="txn-row">
@@ -279,7 +316,8 @@ function TxRow({
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
         <div className={`txn-amount ${tx.transactionType}`}>
-          {tx.transactionType === "income" ? "+" : "-"}${tx.amount.toFixed(2)}
+          {tx.transactionType === "income" ? "+" : "-"}
+          {formatMoney(tx.amount, currency)}
         </div>
         <button
           onClick={() => onEdit(tx)}
@@ -313,16 +351,17 @@ function TxRow({
   );
 }
 
-
 function ReportsTab({
   transactions,
   goals,
+  currency,
+  setCurrency,
 }: {
   transactions: Transaction[];
   goals: Goal[];
+  currency: CurrencyMode;
+  setCurrency: (currency: CurrencyMode) => void;
 }) {
-  // ─── Monthly income vs expenses ──────────────────────────────────────────
-
   const monthlyData = useMemo(() => {
     const map: Record<
       string,
@@ -345,11 +384,13 @@ function ReportsTab({
 
     return Object.entries(map)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, v]) => v)
-      .slice(-6); // last 6 months
-  }, [transactions]);
-
-  // ─── Spending by category ────────────────────────────────────────────────
+      .map(([, v]) => ({
+        month: v.month,
+        income: convertUsdToDisplay(v.income, currency),
+        expense: convertUsdToDisplay(v.expense, currency),
+      }))
+      .slice(-6);
+  }, [transactions, currency]);
 
   const categoryData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -362,10 +403,11 @@ function ReportsTab({
 
     return Object.entries(map)
       .sort(([, a], [, b]) => b - a)
-      .map(([category, amount]) => ({ category, amount }));
-  }, [transactions]);
-
-  // ─── Goals progress ──────────────────────────────────────────────────────
+      .map(([category, amount]) => ({
+        category,
+        amount: convertUsdToDisplay(amount, currency),
+      }));
+  }, [transactions, currency]);
 
   const totalIncome = transactions
     .filter((tx) => tx.transactionType === "income")
@@ -378,7 +420,14 @@ function ReportsTab({
   const totalSaved = goals.reduce((sum, g) => sum + g.savedAmount, 0);
   const totalTargeted = goals.reduce((sum, g) => sum + g.targetAmount, 0);
 
-  // ─── Chart helpers ───────────────────────────────────────────────────────
+  const totalIncomeDisplay = convertUsdToDisplay(totalIncome, currency);
+  const totalExpensesDisplay = convertUsdToDisplay(totalExpenses, currency);
+  const netBalanceDisplay = convertUsdToDisplay(
+    totalIncome - totalExpenses,
+    currency,
+  );
+  const totalSavedDisplay = convertUsdToDisplay(totalSaved, currency);
+  const totalTargetedDisplay = convertUsdToDisplay(totalTargeted, currency);
 
   const maxMonthlyValue = Math.max(
     ...monthlyData.flatMap((m) => [m.income, m.expense]),
@@ -398,8 +447,6 @@ function ReportsTab({
     "#4ade80",
   ];
 
-  // ─── Render ──────────────────────────────────────────────────────────────
-
   return (
     <div
       style={{
@@ -409,27 +456,105 @@ function ReportsTab({
         padding: "0 0 2rem",
       }}
     >
-      {/* ── Summary cards ── */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-label">Total Income</div>
-          <div className="stat-number income">${totalIncome.toFixed(2)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Total Expenses</div>
-          <div className="stat-number expense">${totalExpenses.toFixed(2)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Net Balance</div>
-          <div
-            className={`stat-number ${totalIncome - totalExpenses >= 0 ? "income" : "expense"}`}
+      <div className="section_2">
+        <div className="section-header">
+          <h2>Reports</h2>
+
+          <button
+            type="button"
+            onClick={() => setCurrency(currency === "USD" ? "XAF" : "USD")}
+            aria-pressed={currency === "XAF"}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.6rem",
+              border: "1px solid var(--border, #333)",
+              background: "var(--card, #ffffff)",
+              color: "inherit",
+              padding: "0.45rem 0.75rem",
+              borderRadius: "999px",
+              cursor: "pointer",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              minWidth: "120px",
+              justifyContent: "space-between",
+            }}
+            title="Switch currency display"
           >
-            ${(totalIncome - totalExpenses).toFixed(2)}
-          </div>
+            <span>{currency === "USD" ? "USD" : "XAF"}</span>
+            <span
+              style={{
+                width: "42px",
+                height: "24px",
+                borderRadius: "999px",
+                background: currency === "XAF" ? "#60a5fa" : "#6b7280",
+                position: "relative",
+                flexShrink: 0,
+                transition: "background 0.2s ease",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  top: "2px",
+                  left: currency === "XAF" ? "20px" : "2px",
+                  width: "20px",
+                  height: "20px",
+                  borderRadius: "50%",
+                  background: "#fff",
+                  transition: "left 0.2s ease",
+                }}
+              />
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* ── Monthly income vs expenses bar chart ── */}
+      {/* Financial Summary */}
+
+      {(() => {
+        const netBalance = totalIncome - totalExpenses;
+
+        const totalSavedInActiveGoals = goals
+          .filter((goal) => goal.status !== "completed")
+          .reduce((sum, goal) => sum + goal.savedAmount, 0);
+
+        const spendableAmount = netBalance - totalSavedInActiveGoals;
+
+        return (
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-label">Net Balance</div>
+              <div
+                className={`stat-number ${
+                  netBalance >= 0 ? "income" : "expense"
+                }`}
+              >
+                {formatMoney(netBalance, currency)}
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-label">Total Saved</div>
+              <div className="stat-number income">
+                {formatMoney(totalSavedInActiveGoals, currency)}
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-label">Spendable Amount</div>
+              <div
+                className={`stat-number ${
+                  spendableAmount >= 0 ? "income" : "expense"
+                }`}
+              >
+                {formatMoney(spendableAmount, currency)}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="section_2">
         <div className="section-header">
           <h2>Monthly Overview</h2>
@@ -442,7 +567,6 @@ function ReportsTab({
           <p style={{ color: "var(--text-muted, #888)" }}>No data yet.</p>
         ) : (
           <>
-            {/* Legend */}
             <div
               style={{ display: "flex", gap: "1.25rem", marginBottom: "1rem" }}
             >
@@ -484,7 +608,6 @@ function ReportsTab({
               </div>
             </div>
 
-            {/* Bars */}
             <div
               style={{
                 display: "flex",
@@ -514,7 +637,6 @@ function ReportsTab({
                       width: "100%",
                     }}
                   >
-                    {/* Income bar */}
                     <div
                       style={{
                         flex: 1,
@@ -533,10 +655,10 @@ function ReportsTab({
                           minHeight: m.income > 0 ? 4 : 0,
                           transition: "height 0.3s ease",
                         }}
-                        title={`Income: $${m.income.toFixed(2)}`}
+                        title={`Income: ${formatMoney(m.income, currency)}`}
                       />
                     </div>
-                    {/* Expense bar */}
+
                     <div
                       style={{
                         flex: 1,
@@ -555,10 +677,11 @@ function ReportsTab({
                           minHeight: m.expense > 0 ? 4 : 0,
                           transition: "height 0.3s ease",
                         }}
-                        title={`Expenses: $${m.expense.toFixed(2)}`}
+                        title={`Expenses: ${formatMoney(m.expense, currency)}`}
                       />
                     </div>
                   </div>
+
                   <div
                     style={{
                       fontSize: "0.7rem",
@@ -576,7 +699,6 @@ function ReportsTab({
         )}
       </div>
 
-      {/* ── Spending by category ── */}
       <div className="section_2">
         <div className="section-header">
           <h2>Spending by Category</h2>
@@ -630,7 +752,7 @@ function ReportsTab({
                       {c.category}
                     </span>
                     <span style={{ color: "var(--text-muted, #888)" }}>
-                      ${c.amount.toFixed(2)}{" "}
+                      {formatMoney(c.amount, currency)}{" "}
                       <span style={{ fontSize: "0.78rem" }}>({sharePct}%)</span>
                     </span>
                   </div>
@@ -659,7 +781,6 @@ function ReportsTab({
         )}
       </div>
 
-      {/* ── Savings goals progress ── */}
       <div className="section_2">
         <div className="section-header">
           <h2>Savings Goals Progress</h2>
@@ -667,7 +788,8 @@ function ReportsTab({
             <span
               style={{ fontSize: "0.85rem", color: "var(--text-muted, #888)" }}
             >
-              ${totalSaved.toFixed(2)} / ${totalTargeted.toFixed(2)}
+              {formatMoney(totalSaved, currency)} /{" "}
+              {formatMoney(totalTargeted, currency)}
             </span>
           )}
         </div>
@@ -679,11 +801,15 @@ function ReportsTab({
             style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
           >
             {goals.map((goal) => {
-              const pct = Math.min(
-                (goal.savedAmount / goal.targetAmount) * 100,
-                100,
+              const pct =
+                goal.targetAmount > 0
+                  ? Math.min((goal.savedAmount / goal.targetAmount) * 100, 100)
+                  : 0;
+
+              const remaining = Math.max(
+                goal.targetAmount - goal.savedAmount,
+                0,
               );
-              const remaining = goal.targetAmount - goal.savedAmount;
               const isComplete = goal.status === "completed";
 
               return (
@@ -749,9 +875,9 @@ function ReportsTab({
                       color: "var(--text-muted, #888)",
                     }}
                   >
-                    <span>${goal.savedAmount.toFixed(2)} saved</span>
+                    <span>{formatMoney(goal.savedAmount, currency)} saved</span>
                     {!isComplete && (
-                      <span>${remaining.toFixed(2)} remaining</span>
+                      <span>{formatMoney(remaining, currency)} remaining</span>
                     )}
                     {goal.deadline && (
                       <span>
@@ -766,7 +892,6 @@ function ReportsTab({
         )}
       </div>
 
-      {/* ── Income vs expenses donut ── */}
       <div className="section_2">
         <div className="section-header">
           <h2>Income vs Expenses</h2>
@@ -783,10 +908,8 @@ function ReportsTab({
               flexWrap: "wrap",
             }}
           >
-            {/* SVG donut */}
             <DonutChart income={totalIncome} expenses={totalExpenses} />
 
-            {/* Legend */}
             <div
               style={{
                 display: "flex",
@@ -812,7 +935,7 @@ function ReportsTab({
                 <div>
                   <div style={{ fontSize: "0.85rem" }}>Income</div>
                   <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
-                    ${totalIncome.toFixed(2)}
+                    {formatMoney(totalIncome, currency)}
                   </div>
                 </div>
               </div>
@@ -834,7 +957,7 @@ function ReportsTab({
                 <div>
                   <div style={{ fontSize: "0.85rem" }}>Expenses</div>
                   <div style={{ fontSize: "0.95rem", fontWeight: 600 }}>
-                    ${totalExpenses.toFixed(2)}
+                    {formatMoney(totalExpenses, currency)}
                   </div>
                 </div>
               </div>
@@ -880,7 +1003,7 @@ function DonutChart({
   expenses: number;
 }) {
   const total = income + expenses;
-  const incomeShare = income / total;
+  const incomeShare = total > 0 ? income / total : 0;
 
   const radius = 60;
   const circumference = 2 * Math.PI * radius;
@@ -889,7 +1012,6 @@ function DonutChart({
 
   return (
     <svg width="160" height="160" viewBox="0 0 160 160">
-      {/* Expense arc (background) */}
       <circle
         cx="80"
         cy="80"
@@ -901,7 +1023,6 @@ function DonutChart({
         strokeDashoffset={0}
         transform="rotate(-90 80 80)"
       />
-      {/* Income arc */}
       <circle
         cx="80"
         cy="80"
@@ -913,7 +1034,6 @@ function DonutChart({
         strokeDashoffset={0}
         transform="rotate(-90 80 80)"
       />
-      {/* Center label */}
       <text
         x="80"
         y="75"
@@ -948,6 +1068,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [currency, setCurrency] = useState<CurrencyMode>("USD");
 
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactionForm, setTransactionForm] = useState<TransactionForm>(
@@ -971,8 +1092,6 @@ export default function DashboardPage() {
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // ─── Fetch ─────────────────────────────────────────────────────────────────
 
   async function fetchTransactions() {
     try {
@@ -1003,8 +1122,6 @@ export default function DashboardPage() {
     fetchGoals();
   }, []);
 
-  // ─── Transactions ───────────────────────────────────────────────────────────
-
   async function createTransaction(e: React.FormEvent) {
     e.preventDefault();
     setTxError("");
@@ -1013,6 +1130,7 @@ export default function DashboardPage() {
       setTxError("Please enter a category.");
       return;
     }
+
     setTxLoading(true);
     try {
       const res = await fetch(`${API}/api/transactions`, {
@@ -1020,7 +1138,7 @@ export default function DashboardPage() {
         headers: authHeaders(),
         body: JSON.stringify({
           title: transactionForm.title,
-          amount: Number(transactionForm.amount),
+          amount: convertDisplayToUsd(transactionForm.amount, currency),
           transactionType: transactionForm.transactionType,
           category,
           description: transactionForm.description || null,
@@ -1057,7 +1175,7 @@ export default function DashboardPage() {
     setEditingTx(tx);
     setEditForm({
       title: tx.title,
-      amount: String(tx.amount),
+      amount: formatMoneyNoSymbol(tx.amount, currency),
       transactionType: tx.transactionType,
       category: tx.category,
       description: tx.description || "",
@@ -1068,12 +1186,14 @@ export default function DashboardPage() {
   async function updateTransaction(e: React.FormEvent) {
     e.preventDefault();
     if (!editingTx) return;
+
     setEditError("");
     const category = editForm.category.trim();
     if (!category) {
       setEditError("Please enter a category.");
       return;
     }
+
     setEditLoading(true);
     try {
       const res = await fetch(`${API}/api/transactions/${editingTx.id}`, {
@@ -1081,7 +1201,7 @@ export default function DashboardPage() {
         headers: authHeaders(),
         body: JSON.stringify({
           title: editForm.title,
-          amount: Number(editForm.amount),
+          amount: convertDisplayToUsd(editForm.amount, currency),
           transactionType: editForm.transactionType,
           category,
           description: editForm.description || null,
@@ -1098,8 +1218,6 @@ export default function DashboardPage() {
     }
   }
 
-  // ─── Goals ──────────────────────────────────────────────────────────────────
-
   async function createGoal(e: React.FormEvent) {
     e.preventDefault();
     setGoalError("");
@@ -1110,7 +1228,7 @@ export default function DashboardPage() {
         headers: authHeaders(),
         body: JSON.stringify({
           name: goalForm.name,
-          targetAmount: Number(goalForm.targetAmount),
+          targetAmount: convertDisplayToUsd(goalForm.targetAmount, currency),
           deadline: goalForm.deadline || null,
         }),
       });
@@ -1151,7 +1269,10 @@ export default function DashboardPage() {
       const res = await fetch(`${API}/api/goals/${goalId}/contribute`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ amount: Number(amount), note: note || null }),
+        body: JSON.stringify({
+          amount: convertDisplayToUsd(amount, currency),
+          note: note || null,
+        }),
       });
       if (!res.ok) throw new Error("Failed to contribute");
       await fetchGoals();
@@ -1159,8 +1280,6 @@ export default function DashboardPage() {
       console.error(err);
     }
   }
-
-  // ─── Derived data ───────────────────────────────────────────────────────────
 
   const totalIncome = transactions
     .filter((tx) => tx.transactionType === "income")
@@ -1171,7 +1290,9 @@ export default function DashboardPage() {
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   const balance = totalIncome - totalExpenses;
+
   const recentTransactions = transactions.slice(0, 5);
+
   const allCategories = Array.from(
     new Set(transactions.map((tx) => tx.category)),
   );
@@ -1183,14 +1304,12 @@ export default function DashboardPage() {
       !searchQuery ||
       tx.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.category.toLowerCase().includes(searchQuery.toLowerCase());
+
     return matchType && matchCat && matchSearch;
   });
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
-
   return (
     <div className="app-container">
-      {/* HEADER */}
       <header className="header">
         <div className="logo">
           <h1>
@@ -1218,7 +1337,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* TABS */}
       <div className="nav-tabs">
         {["dashboard", "transactions", "goals", "reports"].map((tab) => (
           <button
@@ -1233,24 +1351,25 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ── DASHBOARD ── */}
       {activeTab === "dashboard" && (
         <>
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Current Balance</div>
-              <div className="stat-number">${balance.toFixed(2)}</div>
+              <div className="stat-number">
+                {formatMoney(balance, currency)}
+              </div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Total Income</div>
               <div className="stat-number income">
-                ${totalIncome.toFixed(2)}
+                {formatMoney(totalIncome, currency)}
               </div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Total Expenses</div>
               <div className="stat-number expense">
-                ${totalExpenses.toFixed(2)}
+                {formatMoney(totalExpenses, currency)}
               </div>
             </div>
           </div>
@@ -1288,10 +1407,11 @@ export default function DashboardPage() {
             )}
 
             {goals.slice(0, 3).map((goal) => {
-              const percent = Math.min(
-                (goal.savedAmount / goal.targetAmount) * 100,
-                100,
-              );
+              const percent =
+                goal.targetAmount > 0
+                  ? Math.min((goal.savedAmount / goal.targetAmount) * 100, 100)
+                  : 0;
+
               return (
                 <div className="goal-card" key={goal.id}>
                   <div className="goal-header">
@@ -1305,9 +1425,10 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div className="goal-stats">
-                    <span>${goal.savedAmount.toFixed(2)} saved</span>
+                    <span>{formatMoney(goal.savedAmount, currency)} saved</span>
                     <span>
-                      {percent.toFixed(0)}% · ${goal.targetAmount.toFixed(2)}
+                      {percent.toFixed(0)}% ·{" "}
+                      {formatMoney(goal.targetAmount, currency)}
                     </span>
                   </div>
                 </div>
@@ -1340,6 +1461,7 @@ export default function DashboardPage() {
                 tx={tx}
                 onEdit={openEditModal}
                 onDelete={deleteTransaction}
+                currency={currency}
               />
             ))}
           </section>
@@ -1390,7 +1512,6 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* ── TRANSACTIONS ── */}
       {activeTab === "transactions" && (
         <div className="section_2">
           <div className="section-header">
@@ -1477,12 +1598,12 @@ export default function DashboardPage() {
               tx={tx}
               onEdit={openEditModal}
               onDelete={deleteTransaction}
+              currency={currency}
             />
           ))}
         </div>
       )}
 
-      {/* ── GOALS ── */}
       {activeTab === "goals" && (
         <GoalsTab
           goals={goals}
@@ -1493,15 +1614,19 @@ export default function DashboardPage() {
             setGoalError("");
             setShowGoalModal(true);
           }}
+          currency={currency}
         />
       )}
 
-      {/* ── REPORTS ── */}
       {activeTab === "reports" && (
-        <ReportsTab transactions={transactions} goals={goals} />
+        <ReportsTab
+          transactions={transactions}
+          goals={goals}
+          currency={currency}
+          setCurrency={setCurrency}
+        />
       )}
 
-      {/* ── ADD TRANSACTION MODAL ── */}
       {showTransactionModal && (
         <div
           className="modal-overlay"
@@ -1544,7 +1669,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="form-group">
-                <label>Amount</label>
+                <label>Amount ({currency})</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1613,7 +1738,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── EDIT TRANSACTION MODAL ── */}
       {editingTx && (
         <div className="modal-overlay" onClick={() => setEditingTx(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1647,7 +1771,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="form-group">
-                <label>Amount</label>
+                <label>Amount ({currency})</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1707,7 +1831,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── NEW GOAL MODAL ── */}
       {showGoalModal && (
         <div className="modal-overlay" onClick={() => setShowGoalModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1745,7 +1868,7 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="form-group">
-                <label>Target Amount</label>
+                <label>Target Amount ({currency})</label>
                 <input
                   type="number"
                   step="0.01"
