@@ -28,6 +28,7 @@ CREATE TABLE "SavingsGoal" (
     "targetAmount" REAL NOT NULL,
     "savedAmount" REAL NOT NULL DEFAULT 0,
     "deadline" DATETIME,
+    "status" TEXT NOT NULL DEFAULT 'active',
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     "userId" INTEGER NOT NULL,
@@ -38,6 +39,7 @@ CREATE TABLE "SavingsGoal" (
 CREATE TABLE "GoalContribution" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "amount" REAL NOT NULL,
+    "note" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "goalId" INTEGER NOT NULL,
     CONSTRAINT "GoalContribution_goalId_fkey" FOREIGN KEY ("goalId") REFERENCES "SavingsGoal" ("id") ON DELETE CASCADE ON UPDATE CASCADE

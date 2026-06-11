@@ -4,7 +4,9 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardPage from "./pages/DashboardPage";
 import WelcomePage from "./pages/WelcomePage";
+
 import ProtectedRoute from "./components/ProtectedRoute";
+
 import { useAuth } from "./hooks/useAuth";
 
 function AppRoutes() {
@@ -12,9 +14,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* LOGIN */}
       <Route path="/" element={<WelcomePage />} />
-
+      {/* LOGIN */}
       <Route
         path="/login"
         element={token ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -36,9 +37,10 @@ function AppRoutes() {
         }
       />
 
+      {/* DEFAULT REDIRECT */}
       <Route
         path="*"
-        element={<Navigate to="/" replace />}
+        element={<Navigate to={token ? "/dashboard" : "/login"} replace />}
       />
     </Routes>
   );

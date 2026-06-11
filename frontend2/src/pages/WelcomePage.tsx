@@ -84,7 +84,7 @@ export default function WelcomePage() {
 
       {/* FOOTER */}
       <footer className="welcome-footer">
-        � 2026 FinBalance � Built with React & Node.js
+        2026 FinBalance Built with React & Node.js
       </footer>
     </div>
   );
